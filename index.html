@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,13 +8,18 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- GameBoy Bezel -->
     <div id="bezel">
+        <!-- Game Screen -->
         <div id="game-container">
             <div id="game-screen">
-                <p id="game-text">Welcome to the monster taming road trip!</p>
+                <p id="game-text">SkwidBOI embarks on the journey!</p>
             </div>
         </div>
+
+        <!-- Controls -->
         <div id="controls">
+            <!-- D-Pad -->
             <div id="dpad">
                 <button onclick="navigate('up')">▲</button>
                 <div class="middle-row">
@@ -22,12 +28,18 @@
                 </div>
                 <button onclick="navigate('down')">▼</button>
             </div>
+
+            <!-- Action Buttons -->
             <div id="buttons">
                 <button onclick="navigate('back')">B</button>
                 <button onclick="navigate('select')">A</button>
             </div>
         </div>
+
+        <!-- Name Change Button -->
+        <button id="nameButton" onclick="promptNameChange()">Set Name</button>
     </div>
+
     <script src="game.js"></script>
 </body>
 </html>
