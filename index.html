@@ -10,7 +10,9 @@
 <body>
     <!-- GameBoy Frame -->
     <div id="bezel">
-        <!-- Dynamic Name Label -->
+<body>
+    <!-- GameBoy Bezel -->
+    <div id="bezel">
         <p id="gameboy-label">SkwidBOI</p>
 
         <!-- Game Screen -->
@@ -20,23 +22,26 @@
             </div>
         </div>
 
-        <!-- Controls -->
+        <!-- Control Layout -->
         <div id="controls">
+            <!-- D-Pad -->
             <div id="dpad">
-                <button onclick="navigate('up')">▲</button>
+                <button id="up" onclick="navigate('up')">▲</button>
                 <div class="middle-row">
-                    <button onclick="navigate('left')">◄</button>
-                    <button onclick="navigate('right')">►</button>
+                    <button id="left" onclick="navigate('left')">◄</button>
+                    <button id="center">•</button> <!-- Static center -->
+                    <button id="right" onclick="navigate('right')">►</button>
                 </div>
-                <button onclick="navigate('down')">▼</button>
+                <button id="down" onclick="navigate('down')">▼</button>
             </div>
+
+            <!-- Action Buttons (Positioned to the Right) -->
             <div id="buttons">
-                <button onclick="navigate('back')">B</button>
-                <button onclick="navigate('select')">A</button>
+                <button id="b" onclick="navigate('back')">B</button>
+                <button id="a" onclick="navigate('select')">A</button>
             </div>
         </div>
 
-        <!-- Name Change Button -->
         <button id="nameButton" onclick="promptNameChange()">Set Name</button>
     </div>
 
