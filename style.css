@@ -1,42 +1,39 @@
-/* Base GameBoy styling */
-body {
-    font-family: "Press Start 2P", monospace; /* Pixel-style font */
-    background-color: #9bbc0f; /* GameBoy green */
-    color: #0f380f;
-    text-align: center;
-    margin: 0;
-    padding: 0;
+html, body {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Prevent black bars */
+    background-color: #9bbc0f;
 }
 
-/* Game screen container */
+/* Game Screen Styling */
 #game-container {
-    width: 320px;
-    height: 288px; /* Default GameBoy screen size */
-    margin: auto;
+    width: 80vw; /* Use viewport width */
+    height: 80vh; /* Use viewport height */
+    max-width: 320px; /* Ensures proper scaling */
+    max-height: 288px;
     background: #8bac0f;
     padding: 15px;
     border-radius: 10px;
-    border: 6px solid #0f380f; /* Outer screen border */
-    position: relative;
+    border: 6px solid #0f380f;
     box-shadow: inset 0px 0px 10px #0f380f;
-}
-
-/* Styled buttons to resemble GameBoy D-pad */
-#controls {
     display: flex;
+    flex-direction: column;
     justify-content: center;
-    margin-top: 10px;
+    align-items: center;
 }
 
+/* Game Screen */
+#game-screen {
+    width: 100%;
+    height: 80%;
+    font-size: min(4vw, 18px); /* Responsive text */
+}
+
+/* Scaled Buttons */
 #controls button {
-    font-size: 24px;
-    background: #0f380f;
-    color: #e0f8d0;
-    border: 2px solid #8bac0f;
-    padding: 10px;
-    margin: 5px;
-    cursor: pointer;
-    border-radius: 5px;
-    box-shadow: inset 2px 2px 5px #306230;
+    font-size: min(6vw, 24px);
+    padding: min(3vw, 10px);
 }
-
