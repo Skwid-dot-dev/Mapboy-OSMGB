@@ -56,17 +56,26 @@ body {
     box-shadow: inset 2px 2px 5px #306230;
 }
 
-/* Responsive screen resizing for different devices */
 @media (max-width: 600px) {
     #game-container {
-        width: 90vw; /* Adjust width dynamically */
+        width: 90vw;
         height: 60vh;
+        transform: scale(1.5); /* Enlarges everything proportionally */
+    }
+
+    #game-screen {
+        font-size: 18px; /* Increase text size */
+    }
+
+    #controls button {
+        font-size: 30px; /* Bigger buttons */
+        padding: 15px;
     }
 }
 
 @media (min-width: 601px) {
     #game-container {
-        width: 320px; /* Default GameBoy size */
+        width: 320px;
         height: 288px;
     }
 }
