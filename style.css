@@ -1,39 +1,48 @@
+/* Full page to center the GameBoy */
 html, body {
     height: 100%;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* Prevent black bars */
-    background-color: #9bbc0f;
+    background-color: #3a3a3a; /* Simulating a dark outer shell */
+    margin: 0;
+    padding: 0;
 }
 
-/* Game Screen Styling */
+/* Outer GameBoy frame */
+#bezel {
+    width: 400px; /* Slightly larger than the screen */
+    height: 400px;
+    background-color: #9bbc0f; /* Classic GameBoy plastic color */
+    border-radius: 25px; /* Curved edges */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    box-shadow: inset 0px 0px 10px #0f380f, 0px 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Game screen inside the bezel */
 #game-container {
-    width: 80vw; /* Use viewport width */
-    height: 80vh; /* Use viewport height */
-    max-width: 320px; /* Ensures proper scaling */
-    max-height: 288px;
+    width: 320px;
+    height: 288px;
     background: #8bac0f;
     padding: 15px;
     border-radius: 10px;
     border: 6px solid #0f380f;
     box-shadow: inset 0px 0px 10px #0f380f;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden; /* Clipping text inside */
 }
 
-/* Game Screen */
+/* Text-box styling to wrap within bezel */
 #game-screen {
     width: 100%;
     height: 80%;
-    font-size: min(4vw, 18px); /* Responsive text */
-}
-
-/* Scaled Buttons */
-#controls button {
-    font-size: min(6vw, 24px);
-    padding: min(3vw, 10px);
+    font-size: min(4vw, 18px);
+    white-space: pre-wrap; /* Ensures text wraps naturally */
+    word-wrap: break-word;
+    overflow: hidden; /* Clips excessive text */
+    text-align: left;
+    padding: 10px;
 }
