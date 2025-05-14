@@ -5,46 +5,437 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monster Tamer Roguelike</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2c2c2c;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        /* GameBoy Console */
+        #gameboy {
+            width: min(90vw, 400px);
+            height: min(95vh, 650px);
+            background-color: #cfd884; /* Classic GameBoy color */
+            border-radius: 15px 15px 60px 15px;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 
+                -8px 0 0 #bac674,
+                8px 8px 0 #8a9454,
+                -5px -5px 10px rgba(255,255,255,0.2) inset,
+                5px 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Nintendo Logo */
+        .nintendo-logo {
+            position: absolute;
+            bottom: 30px;
+            width: 120px;
+            color: #9a9d74;
+            font-size: 10px;
+            text-align: center;
+            letter-spacing: 1px;
+            border: 2px solid #9a9d74;
+            border-radius: 15px;
+            padding: 2px 5px;
+        }
+
+        /* SkwidBOI Logo */
+        .gameboy-label {
+            margin-top: 5px;
+            margin-bottom: 15px;
+            color: #0f380f;
+            font-size: 18px;
+            position: relative;
+            text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* Screen frame */
+        .screen-frame {
+            width: 90%;
+            height: 40%;
+            background-color: #0f380f;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 
+                -2px -2px 5px rgba(255,255,255,0.1) inset,
+                2px 2px 5px rgba(0,0,0,0.3) inset;
+        }
+
+        /* Game screen */
+        .game-screen {
+            width: 100%;
+            height: 100%;
+            background-color: #8bac0f;
+            border-radius: 3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5) inset;
+        }
+
+        /* Game text */
+        #game-text {
+            padding: 15px;
+            color: #0f380f;
+            font-size: 12px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Power indicator */
+        .power-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 8px;
+            height: 8px;
+            background-color: #ff0000;
+            border-radius: 50%;
+            box-shadow: 0 0 5px #ff0000;
+        }
+
+        .power-text {
+            position: absolute;
+            top: 8px;
+            left: 22px;
+            color: #9a9d74;
+            font-size: 7px;
+        }
+
+        /* Controls section */
+        .controls {
+            margin-top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+        }
+
+        /* D-pad (plus shaped) */
+        .dpad {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .dpad-button {
+            position: absolute;
+            background-color: #282828;
+            border: none;
+            box-shadow: 
+                1px 1px 3px rgba(0,0,0,0.8),
+                -1px -1px 2px rgba(255,255,255,0.1) inset;
+            color: transparent;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .dpad-button:active {
+            box-shadow: 0 0 1px rgba(0,0,0,0.8), 0 0 1px rgba(0,0,0,0.5) inset;
+            transform: translateY(2px);
+        }
+
+        /* Middle cross of D-pad */
+        .dpad-center {
+            width: 40px;
+            height: 40px;
+            left: 40px;
+            top: 40px;
+            background-color: #282828;
+            position: absolute;
+            z-index: 1;
+        }
+
+        /* D-pad directions */
+        .dpad-up {
+            width: 40px;
+            height: 40px;
+            left: 40px;
+            top: 0;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .dpad-right {
+            width: 40px;
+            height: 40px;
+            left: 80px;
+            top: 40px;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .dpad-down {
+            width: 40px;
+            height: 40px;
+            left: 40px;
+            top: 80px;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .dpad-left {
+            width: 40px;
+            height: 40px;
+            left: 0;
+            top: 40px;
+            border-radius: 5px 0 0 5px;
+        }
+
+        /* AB buttons */
+        .ab-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button {
+            width: 40px;
+            height: 40px;
+            background-color: #920018;
+            border: none;
+            border-radius: 50%;
+            color: transparent;
+            position: relative;
+            box-shadow: 
+                2px 2px 5px rgba(0,0,0,0.5),
+                -1px -1px 3px rgba(255,255,255,0.1) inset;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .button:active {
+            box-shadow: 0 0 2px rgba(0,0,0,0.5);
+            transform: translateY(2px);
+        }
+
+        .button::after {
+            position: absolute;
+            color: #9a9d74;
+            font-size: 12px;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .button-b::after {
+            content: "B";
+        }
+
+        .button-a::after {
+            content: "A";
+        }
+
+        /* Start/Select buttons */
+        .start-select {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            transform: rotate(-25deg);
+        }
+
+        .pill-button {
+            width: 50px;
+            height: 15px;
+            background-color: #4d4d4d;
+            border-radius: 10px;
+            box-shadow: 
+                1px 1px 3px rgba(0,0,0,0.8),
+                -1px -1px 2px rgba(255,255,255,0.1) inset;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .pill-button:active {
+            box-shadow: 0 0 1px rgba(0,0,0,0.8);
+            transform: translateY(1px);
+        }
+
+        .pill-button::after {
+            position: absolute;
+            color: #9a9d74;
+            font-size: 8px;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .button-select::after {
+            content: "SELECT";
+        }
+
+        .button-start::after {
+            content: "START";
+        }
+
+        /* Speaker holes */
+        .speaker {
+            position: absolute;
+            bottom: 35px;
+            right: 30px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+        }
+
+        .speaker-hole {
+            width: 5px;
+            height: 5px;
+            background-color: #4d4d4d;
+            border-radius: 50%;
+        }
+
+        /* Name change button */
+        #nameButton {
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            background-color: transparent;
+            border: none;
+            color: #4d4d4d;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+        }
+
+        #nameButton:hover {
+            color: #0f380f;
+        }
+    </style>
 </head>
 <body>
-    <!-- GameBoy Frame -->
-    <div id="bezel">
-<body>
-    <!-- GameBoy Bezel -->
-    <div id="bezel">
-        <p id="gameboy-label">SkwidBOI</p>
+    <div id="gameboy">
+        <!-- Power indicator -->
+        <div class="power-indicator"></div>
+        <div class="power-text">POWER</div>
 
-        <!-- Game Screen -->
-        <div id="game-container">
-            <div id="game-screen">
-                <p id="game-text">Welcome to the adventure!</p>
+        <!-- Console label -->
+        <div class="gameboy-label">SkwidBOI</div>
+
+        <!-- Screen frame -->
+        <div class="screen-frame">
+            <div class="game-screen">
+                <p id="game-text">Welcome to the adventure! Press START to begin your monster taming journey.</p>
             </div>
         </div>
 
-        <!-- Control Layout -->
-        <div id="controls">
-    <!-- Correct Plus-Shaped D-Pad -->
-    <div id="dpad">
-        <button id="up" onclick="navigate('up')">▲</button>
-        <div class="horizontal-row">
-            <button id="left" onclick="navigate('left')">◄</button>
-            <button id="center"></button> <!-- Static center space -->
-            <button id="right" onclick="navigate('right')">►</button>
+        <!-- Controls -->
+        <div class="controls">
+            <!-- D-pad -->
+            <div class="dpad">
+                <div class="dpad-center"></div>
+                <button class="dpad-button dpad-up" onclick="navigate('up')"></button>
+                <button class="dpad-button dpad-right" onclick="navigate('right')"></button>
+                <button class="dpad-button dpad-down" onclick="navigate('down')"></button>
+                <button class="dpad-button dpad-left" onclick="navigate('left')"></button>
+            </div>
+
+            <!-- A/B buttons -->
+            <div class="ab-buttons">
+                <button class="button button-b" onclick="navigate('back')"></button>
+                <button class="button button-a" onclick="navigate('select')"></button>
+            </div>
         </div>
-        <button id="down" onclick="navigate('down')">▼</button>
+
+        <!-- Start/Select buttons -->
+        <div class="start-select">
+            <button class="pill-button button-select" onclick="navigate('menu')"></button>
+            <button class="pill-button button-start" onclick="navigate('start')"></button>
+        </div>
+
+        <!-- Speaker -->
+        <div class="speaker">
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+            <div class="speaker-hole"></div>
+        </div>
+
+        <!-- Nintendo-style logo -->
+        <div class="nintendo-logo">MONSTER TAMER</div>
+
+        <!-- Name change button -->
+        <button id="nameButton" onclick="promptNameChange()">SET NAME</button>
     </div>
 
-    <!-- Action Buttons Positioned to the Right -->
-    <div id="buttons">
-        <button id="b" onclick="navigate('back')">B</button>
-        <button id="a" onclick="navigate('select')">A</button>
-    </div>
-</div>
+    <script>
+        // Basic game functions
+        function navigate(direction) {
+            let message = "";
+            
+            switch(direction) {
+                case 'up':
+                    message = "Moving up...";
+                    break;
+                case 'down':
+                    message = "Moving down...";
+                    break;
+                case 'left':
+                    message = "Moving left...";
+                    break;
+                case 'right':
+                    message = "Moving right...";
+                    break;
+                case 'select':
+                    message = "Action selected!";
+                    break;
+                case 'back':
+                    message = "Going back...";
+                    break;
+                case 'menu':
+                    message = "Opening menu...";
+                    break;
+                case 'start':
+                    message = "Game started! Find and tame monsters in the wild!";
+                    break;
+            }
+            
+            document.getElementById('game-text').innerText = message;
+        }
 
-        <button id="nameButton" onclick="promptNameChange()">Set Name</button>
-    </div>
-
-    <script src="game.js"></script>
+        // Change player name
+        function promptNameChange() {
+            const newName = prompt("Enter your trainer name:", "SkwidBOI");
+            if (newName !== null && newName.trim() !== "") {
+                document.querySelector('.gameboy-label').innerText = newName;
+            }
+        }
+    </script>
 </body>
 </html>
