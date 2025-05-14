@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -96,13 +95,192 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.5) inset;
         }
 
+        /* Game display area */
+        .game-display {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+        }
+
         /* Game text */
         #game-text {
-            padding: 15px;
             color: #0f380f;
-            font-size: 12px;
-            text-align: center;
+            font-size: 10px;
+            text-align: left;
             line-height: 1.5;
+            margin-bottom: 10px;
+            height: 60%;
+            overflow-y: hidden;
+        }
+
+        /* Game terrain and sprites */
+        #game-canvas {
+            width: 100%;
+            height: 60%;
+            position: relative;
+        }
+
+        .terrain {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 1px;
+        }
+
+        .terrain-tile {
+            background-color: #8bac0f;
+            border: 1px solid #0f380f;
+            position: relative;
+        }
+
+        .tile-grass {
+            background-color: #74a31c;
+        }
+
+        .tile-water {
+            background-color: #186790;
+        }
+
+        .tile-cave {
+            background-color: #4a4a4a;
+        }
+
+        .tile-forest {
+            background-color: #306020;
+        }
+
+        .sprite {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .player-sprite {
+            color: #0f380f;
+        }
+
+        .monster-sprite {
+            color: #920018;
+        }
+
+        /* Game UI elements */
+        .game-ui {
+            width: 100%;
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-options {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 3px;
+        }
+
+        .menu-option {
+            border: 1px solid #0f380f;
+            padding: 5px;
+            font-size: 8px;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-option.selected {
+            background-color: #0f380f;
+            color: #8bac0f;
+        }
+
+        .status-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            margin-top: 5px;
+        }
+
+        .health-bar, .catch-meter {
+            width: 100%;
+            height: 8px;
+            background-color: #0f380f;
+            margin-top: 2px;
+            position: relative;
+        }
+
+        .health-fill, .catch-fill {
+            height: 100%;
+            background-color: #920018;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        .catch-fill {
+            background-color: #306020;
+        }
+
+        .fight-screen {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            width: 100%;
+        }
+
+        .monster-display {
+            display: flex;
+            justify-content: space-between;
+            height: 60%;
+        }
+
+        .monster-stats {
+            font-size: 8px;
+            width: 100%;
+        }
+
+        /* Monster collection screen */
+        .collection-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .collection-title {
+            font-size: 10px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .monster-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            overflow-y: auto;
+            height: 85%;
+        }
+
+        .monster-entry {
+            font-size: 8px;
+            border: 1px solid #0f380f;
+            padding: 3px;
+        }
+
+        .monster-name {
+            font-weight: bold;
         }
 
         /* Power indicator */
@@ -337,7 +515,62 @@
         <!-- Screen frame -->
         <div class="screen-frame">
             <div class="game-screen">
-                <p id="game-text">Welcome to the adventure! Press START to begin your monster taming journey.</p>
+                <!-- Main game display -->
+                <div class="game-display">
+                    <div id="game-text">Welcome to MONSTER TAMER! Press START to begin your journey.</div>
+                    
+                    <!-- Game canvas (visible during exploration) -->
+                    <div id="game-canvas">
+                        <div class="terrain" id="terrain"></div>
+                    </div>
+                    
+                    <!-- Game UI (menus, battle options) -->
+                    <div class="game-ui">
+                        <div class="menu-options" id="menu-options">
+                            <div class="menu-option" data-action="fight">FIGHT</div>
+                            <div class="menu-option" data-action="catch">CATCH</div>
+                            <div class="menu-option" data-action="item">ITEM</div>
+                            <div class="menu-option" data-action="run">RUN</div>
+                        </div>
+                        <div class="status-bar">
+                            <div>HP: <span id="player-hp">30/30</span></div>
+                            <div>LVL: <span id="player-level">1</span></div>
+                        </div>
+                        <div class="health-bar">
+                            <div class="health-fill" id="health-bar"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Battle screen (shown during monster encounters) -->
+                <div class="fight-screen" id="fight-screen">
+                    <div class="monster-display">
+                        <div class="monster-stats" id="wild-monster-stats">
+                            <div>WILD <span id="monster-name">???</span></div>
+                            <div>HP: <span id="monster-hp">??/??</span></div>
+                            <div class="health-bar">
+                                <div class="health-fill" id="monster-health-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="menu-options">
+                        <div class="menu-option" data-action="attack">ATTACK</div>
+                        <div class="menu-option" data-action="special">SPECIAL</div>
+                        <div class="menu-option" data-action="capture">TAME</div>
+                        <div class="menu-option" data-action="escape">ESCAPE</div>
+                    </div>
+                    <div class="catch-meter">
+                        <div class="catch-fill" id="catch-meter"></div>
+                    </div>
+                </div>
+                
+                <!-- Monster collection screen -->
+                <div class="collection-screen" id="collection-screen">
+                    <div class="collection-title">COLLECTION</div>
+                    <div class="monster-list" id="monster-list">
+                        <!-- Monster entries will be added here -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -395,47 +628,668 @@
     </div>
 
     <script>
-        // Basic game functions
-        function navigate(direction) {
-            let message = "";
+        // Game state
+        const gameState = {
+            started: false,
+            currentScreen: 'title', // title, exploration, battle, collection
+            playerName: 'SkwidBOI',
+            playerPosition: { x: 2, y: 2 },
+            playerStats: {
+                level: 1,
+                maxHp: 30,
+                currentHp: 30,
+                attack: 5,
+                defense: 3,
+                special: 8
+            },
+            selectedMenuOption: 0,
+            terrainMap: [],
+            monsterEncounterRate: 20, // Percentage chance
+            currentWildMonster: null,
+            captureAttempt: 0,
+            collection: [],
+            availableMonsters: [
+                { id: 1, name: 'FLAMIE', type: 'FIRE', hp: 20, attack: 6, defense: 2, sprite: '🔥', rarity: 'common', catchRate: 70 },
+                { id: 2, name: 'BUBLET', type: 'WATER', hp: 18, attack: 4, defense: 4, sprite: '💧', rarity: 'common', catchRate: 70 },
+                { id: 3, name: 'LEAFER', type: 'PLANT', hp: 22, attack: 5, defense: 3, sprite: '🌿', rarity: 'common', catchRate: 70 },
+                { id: 4, name: 'SPARKY', type: 'ELECTRIC', hp: 15, attack: 8, defense: 1, sprite: '⚡', rarity: 'uncommon', catchRate: 50 },
+                { id: 5, name: 'ROCKIE', type: 'ROCK', hp: 25, attack: 3, defense: 6, sprite: '🪨', rarity: 'uncommon', catchRate: 50 },
+                { id: 6, name: 'GHOSTY', type: 'GHOST', hp: 17, attack: 7, defense: 2, sprite: '👻', rarity: 'rare', catchRate: 30 },
+                { id: 7, name: 'DRACKY', type: 'DRAGON', hp: 30, attack: 9, defense: 5, sprite: '🐉', rarity: 'rare', catchRate: 20 },
+                { id: 8, name: 'BIRDEE', type: 'FLYING', hp: 16, attack: 5, defense: 2, sprite: '🦅', rarity: 'uncommon', catchRate: 40 }
+            ]
+        };
+
+        // DOM elements
+        const gameText = document.getElementById('game-text');
+        const terrain = document.getElementById('terrain');
+        const gameCanvas = document.getElementById('game-canvas');
+        const gameDisplay = document.querySelector('.game-display');
+        const fightScreen = document.getElementById('fight-screen');
+        const collectionScreen = document.getElementById('collection-screen');
+        const menuOptions = document.getElementById('menu-options');
+        const monsterList = document.getElementById('monster-list');
+        const healthBar = document.getElementById('health-bar');
+        const playerHpDisplay = document.getElementById('player-hp');
+        const playerLevelDisplay = document.getElementById('player-level');
+        const monsterHealthBar = document.getElementById('monster-health-bar');
+        const monsterNameDisplay = document.getElementById('monster-name');
+        const monsterHpDisplay = document.getElementById('monster-hp');
+        const catchMeter = document.getElementById('catch-meter');
+
+        // Initialize the game
+        function initGame() {
+            generateTerrain();
+            updatePlayerStats();
+            updateDisplay();
             
-            switch(direction) {
-                case 'up':
-                    message = "Moving up...";
+            // Add keyboard controls
+            document.addEventListener('keydown', handleKeyboardInput);
+            
+            // Add event listeners to menu options
+            const options = document.querySelectorAll('.menu-option');
+            options.forEach((option, index) => {
+                option.addEventListener('click', () => {
+                    selectMenuOption(index);
+                });
+            });
+        }
+
+        // Generate random terrain map
+        function generateTerrain() {
+            gameState.terrainMap = [];
+            
+            for (let y = 0; y < 5; y++) {
+                const row = [];
+                for (let x = 0; x < 5; x++) {
+                    // Generate different terrain types
+                    const terrainType = Math.random() < 0.7 ? 'grass' : 
+                                       Math.random() < 0.5 ? 'forest' : 
+                                       Math.random() < 0.5 ? 'water' : 'cave';
+                    row.push(terrainType);
+                }
+                gameState.terrainMap.push(row);
+            }
+            
+            // Ensure player starting position is always grass
+            gameState.terrainMap[2][2] = 'grass';
+            
+            renderTerrain();
+        }
+
+        // Render the terrain on screen
+        function renderTerrain() {
+            terrain.innerHTML = '';
+            
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    const tile = document.createElement('div');
+                    tile.classList.add('terrain-tile');
+                    tile.classList.add(`tile-${gameState.terrainMap[y][x]}`);
+                    
+                    // Add player sprite
+                    if (x === gameState.playerPosition.x && y === gameState.playerPosition.y) {
+                        const playerSprite = document.createElement('div');
+                        playerSprite.classList.add('sprite', 'player-sprite');
+                        playerSprite.textContent = '웃';
+                        tile.appendChild(playerSprite);
+                    }
+                    
+                    terrain.appendChild(tile);
+                }
+            }
+        }
+
+        // Update player stats display
+        function updatePlayerStats() {
+            const { playerStats } = gameState;
+            playerHpDisplay.textContent = `${playerStats.currentHp}/${playerStats.maxHp}`;
+            playerLevelDisplay.textContent = playerStats.level;
+            
+            // Update health bar
+            const healthPercentage = (playerStats.currentHp / playerStats.maxHp) * 100;
+            healthBar.style.width = `${healthPercentage}%`;
+        }
+
+        // Update the game display based on current screen
+        function updateDisplay() {
+            gameDisplay.style.display = 'none';
+            fightScreen.style.display = 'none';
+            collectionScreen.style.display = 'none';
+            
+            switch (gameState.currentScreen) {
+                case 'title':
+                    gameDisplay.style.display = 'flex';
+                    gameText.textContent = "Welcome to MONSTER TAMER! Press START to begin your journey.";
+                    gameCanvas.style.display = 'none';
                     break;
-                case 'down':
-                    message = "Moving down...";
+                    
+                case 'exploration':
+                    gameDisplay.style.display = 'flex';
+                    gameCanvas.style.display = 'block';
+                    gameText.textContent = `Exploring the world. Find and tame monsters!`;
                     break;
-                case 'left':
-                    message = "Moving left...";
+                    
+                case 'battle':
+                    fightScreen.style.display = 'flex';
+                    updateBattleDisplay();
                     break;
-                case 'right':
-                    message = "Moving right...";
+                    
+                case 'collection':
+                    collectionScreen.style.display = 'flex';
+                    renderCollection();
                     break;
-                case 'select':
-                    message = "Action selected!";
+            }
+        }
+
+        // Update battle display
+        function updateBattleDisplay() {
+            const monster = gameState.currentWildMonster;
+            if (!monster) return;
+            
+            monsterNameDisplay.textContent = monster.name;
+            monsterHpDisplay.textContent = `${monster.currentHp}/${monster.hp}`;
+            
+            // Update monster health bar
+            const healthPercentage = (monster.currentHp / monster.hp) * 100;
+            monsterHealthBar.style.width = `${healthPercentage}%`;
+            
+            // Update catch meter if attempting to catch
+            if (gameState.captureAttempt > 0) {
+                const catchPercentage = Math.min(100, gameState.captureAttempt);
+                catchMeter.style.width = `${catchPercentage}%`;
+                catchMeter.style.display = 'block';
+            } else {
+                catchMeter.style.display = 'none';
+            }
+        }
+
+        // Render the monster collection
+        function renderCollection() {
+            monsterList.innerHTML = '';
+            
+            if (gameState.collection.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.classList.add('monster-entry');
+                emptyMessage.textContent = "No monsters tamed yet!";
+                monsterList.appendChild(emptyMessage);
+                return;
+            }
+            
+            gameState.collection.forEach(monster => {
+                const entry = document.createElement('div');
+                entry.classList.add('monster-entry');
+                
+                const name = document.createElement('div');
+                name.classList.add('monster-name');
+                name.textContent = `${monster.sprite} ${monster.name}`;
+                
+                const type = document.createElement('div');
+                type.textContent = `Type: ${monster.type}`;
+                
+                const stats = document.createElement('div');
+                stats.textContent = `HP: ${monster.hp} ATK: ${monster.attack}`;
+                
+                entry.appendChild(name);
+                entry.appendChild(type);
+                entry.appendChild(stats);
+                monsterList.appendChild(entry);
+            });
+        }
+
+        // Handle movement and exploration
+        function movePlayer(dx, dy) {
+            const newX = gameState.playerPosition.x + dx;
+            const newY = gameState.playerPosition.y + dy;
+            
+            // Check boundaries
+            if (newX < 0 || newX >= 5 || newY < 0 || newY >= 5) {
+                gameText.textContent = "Can't go that way!";
+                return;
+            }
+            
+            // Check if terrain is passable (can't walk on water)
+            if (gameState.terrainMap[newY][newX] === 'water') {
+                gameText.textContent = "Can't swim across water!";
+                return;
+            }
+            
+            // Move the player
+            gameState.playerPosition.x = newX;
+            gameState.playerPosition.y = newY;
+            renderTerrain();
+            
+            // Check for random monster encounter
+            checkForMonsterEncounter();
+        }
+
+        // Check for random monster encounters
+        function checkForMonsterEncounter() {
+            const terrainType = gameState.terrainMap[gameState.playerPosition.y][gameState.playerPosition.x];
+            let encounterChance = gameState.monsterEncounterRate;
+            
+            // Adjust encounter rate based on terrain
+            switch (terrainType) {
+                case 'grass':
+                    encounterChance *= 1;
                     break;
-                case 'back':
-                    message = "Going back...";
+                case 'forest':
+                    encounterChance *= 1.5;
                     break;
-                case 'menu':
-                    message = "Opening menu...";
-                    break;
-                case 'start':
-                    message = "Game started! Find and tame monsters in the wild!";
+                case 'cave':
+                    encounterChance *= 2;
                     break;
             }
             
-            document.getElementById('game-text').innerText = message;
+            if (Math.random() * 100 < encounterChance) {
+                startMonsterEncounter(terrainType);
+            }
+        }
+        // Start a monster encounter
+        function startMonsterEncounter(terrainType) {
+            // Select a monster based on the terrain with rarity checks
+            let eligibleMonsters = gameState.availableMonsters.filter(monster => {
+                // Match monsters to terrain
+                if (terrainType === 'grass' && ['PLANT', 'FLYING'].includes(monster.type)) return true;
+                if (terrainType === 'forest' && ['PLANT', 'GHOST', 'FLYING'].includes(monster.type)) return true;
+                if (terrainType === 'cave' && ['ROCK', 'GHOST', 'DRAGON'].includes(monster.type)) return true;
+                if (terrainType === 'grass' && Math.random() < 0.3) return true; // Some monsters appear anywhere
+                return false;
+            });
+            
+            // If no eligible monsters, fall back to any monster
+            if (eligibleMonsters.length === 0) {
+                eligibleMonsters = gameState.availableMonsters;
+            }
+            
+            // Apply rarity filter
+            const rarityRoll = Math.random() * 100;
+            if (rarityRoll < 70) { // 70% chance for common
+                const commonMonsters = eligibleMonsters.filter(m => m.rarity === 'common');
+                if (commonMonsters.length > 0) eligibleMonsters = commonMonsters;
+            } else if (rarityRoll < 95) { // 25% chance for uncommon
+                const uncommonMonsters = eligibleMonsters.filter(m => m.rarity === 'uncommon');
+                if (uncommonMonsters.length > 0) eligibleMonsters = uncommonMonsters;
+            } // else keep rare monsters in the pool (5% chance)
+            
+            // Select a random monster from eligible ones
+            const selectedMonster = eligibleMonsters[Math.floor(Math.random() * eligibleMonsters.length)];
+            
+            // Create a new instance of the selected monster
+            gameState.currentWildMonster = {
+                ...selectedMonster,
+                currentHp: selectedMonster.hp
+            };
+            
+            // Switch to battle screen
+            gameState.currentScreen = 'battle';
+            gameState.captureAttempt = 0;
+            gameState.selectedMenuOption = 0;
+            updateMenuSelection();
+            updateDisplay();
+        }
+
+        // Handle battle actions
+        function handleBattleAction(action) {
+            const { playerStats } = gameState;
+            const monster = gameState.currentWildMonster;
+            
+            if (!monster) return;
+            
+            switch (action) {
+                case 'attack':
+                    // Calculate damage based on player attack and monster defense
+                    const damage = Math.max(1, Math.floor(playerStats.attack * (Math.random() * 0.5 + 0.75)));
+                    monster.currentHp = Math.max(0, monster.currentHp - damage);
+                    
+                    // Update battle display
+                    updateBattleDisplay();
+                    
+                    // Check if monster is defeated
+                    if (monster.currentHp <= 0) {
+                        endBattle(true);
+                        return;
+                    }
+                    
+                    // Monster counterattack
+                    monsterAttack();
+                    break;
+                    
+                case 'special':
+                    // Special attack does more damage but has a chance to miss
+                    if (Math.random() < 0.3) {
+                        // Attack missed
+                        monsterAttack();
+                        return;
+                    }
+                    
+                    // Calculate special damage
+                    const specialDamage = Math.max(1, Math.floor(playerStats.special * (Math.random() * 0.5 + 0.75)));
+                    monster.currentHp = Math.max(0, monster.currentHp - specialDamage);
+                    
+                    // Update battle display
+                    updateBattleDisplay();
+                    
+                    // Check if monster is defeated
+                    if (monster.currentHp <= 0) {
+                        endBattle(true);
+                        return;
+                    }
+                    
+                    // Monster counterattack
+                    monsterAttack();
+                    break;
+                    
+                case 'capture':
+                    // Attempt to catch the monster
+                    attemptCapture();
+                    break;
+                    
+                case 'escape':
+                    // Try to escape from battle
+                    if (Math.random() < 0.6) {
+                        endBattle(false);
+                    } else {
+                        // Failed to escape, monster attacks
+                        monsterAttack();
+                    }
+                    break;
+            }
+        }
+
+        // Monster attack logic
+        function monsterAttack() {
+            const { playerStats } = gameState;
+            const monster = gameState.currentWildMonster;
+            
+            if (!monster) return;
+            
+            // Calculate monster damage
+            const damage = Math.max(1, monster.attack - Math.floor(playerStats.defense / 2));
+            playerStats.currentHp = Math.max(0, playerStats.currentHp - damage);
+            
+            // Update player stats display
+            updatePlayerStats();
+            
+            // Check if player is defeated
+            if (playerStats.currentHp <= 0) {
+                gameOver();
+            }
+        }
+
+        // Attempt to capture a monster
+        function attemptCapture() {
+            const monster = gameState.currentWildMonster;
+            
+            if (!monster) return;
+            
+            // Increase capture attempt counter
+            gameState.captureAttempt += 20;
+            
+            // Calculate catch chance based on monster's health percentage and catch rate
+            const healthPercentage = monster.currentHp / monster.hp;
+            const catchModifier = 1 - (healthPercentage * 0.7); // Lower health = higher chance
+            const catchChance = (monster.catchRate / 100) * catchModifier * (gameState.captureAttempt / 100);
+            
+            // Update the catch meter
+            updateBattleDisplay();
+            
+            // Check if catch is successful
+            if (Math.random() < catchChance) {
+                // Add monster to collection
+                gameState.collection.push({
+                    ...monster,
+                    currentHp: monster.hp // Heal the monster when caught
+                });
+                
+                // End battle with success message
+                endBattle(true, true);
+            } else {
+                // Monster attacks after failed capture attempt
+                monsterAttack();
+            }
+        }
+
+        // End the battle
+        function endBattle(victory, captured = false) {
+            if (victory) {
+                if (captured) {
+                    gameText.textContent = `You successfully tamed ${gameState.currentWildMonster.name}!`;
+                    
+                    // Level up chance after capturing
+                    if (Math.random() < 0.3) {
+                        levelUp();
+                    }
+                } else {
+                    gameText.textContent = `You defeated the wild ${gameState.currentWildMonster.name}!`;
+                    
+                    // Level up chance after defeating
+                    if (Math.random() < 0.5) {
+                        levelUp();
+                    }
+                }
+            } else {
+                gameText.textContent = "You escaped from the battle!";
+            }
+            
+            // Reset battle state
+            gameState.currentWildMonster = null;
+            gameState.captureAttempt = 0;
+            
+            // Return to exploration
+            gameState.currentScreen = 'exploration';
+            updateDisplay();
+        }
+
+        // Level up the player
+        function levelUp() {
+            const { playerStats } = gameState;
+            
+            playerStats.level += 1;
+            playerStats.maxHp += 5;
+            playerStats.currentHp = playerStats.maxHp; // Heal on level up
+            playerStats.attack += 1;
+            playerStats.defense += 1;
+            playerStats.special += 2;
+            
+            updatePlayerStats();
+            gameText.textContent = `Level up! You are now level ${playerStats.level}!`;
+        }
+
+        // Game over state
+        function gameOver() {
+            gameState.currentScreen = 'title';
+            gameText.textContent = "GAME OVER! Your monsters have been released back into the wild. Press START to play again.";
+            gameState.collection = [];
+            
+            // Reset player stats
+            gameState.playerStats = {
+                level: 1,
+                maxHp: 30,
+                currentHp: 30,
+                attack: 5,
+                defense: 3,
+                special: 8
+            };
+            
+            gameState.started = false;
+            updateDisplay();
+        }
+
+        // Handle menu selection
+        function selectMenuOption(index) {
+            if (gameState.currentScreen === 'battle') {
+                const actions = ['attack', 'special', 'capture', 'escape'];
+                gameState.selectedMenuOption = index;
+                updateMenuSelection();
+                handleBattleAction(actions[index]);
+            }
+        }
+
+        // Update menu selection highlighting
+        function updateMenuSelection() {
+            const options = document.querySelectorAll('.menu-option');
+            options.forEach((option, index) => {
+                if (index === gameState.selectedMenuOption) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
+
+        // Navigation and button controls
+        function navigate(direction) {
+            if (!gameState.started && direction === 'start') {
+                startGame();
+                return;
+            }
+            
+            if (!gameState.started) return;
+            
+            switch (gameState.currentScreen) {
+                case 'exploration':
+                    handleExplorationControls(direction);
+                    break;
+                    
+                case 'battle':
+                    handleBattleControls(direction);
+                    break;
+                    
+                case 'collection':
+                    if (direction === 'back' || direction === 'menu') {
+                        gameState.currentScreen = 'exploration';
+                        updateDisplay();
+                    }
+                    break;
+            }
+        }
+
+        // Handle exploration controls
+        function handleExplorationControls(direction) {
+            switch (direction) {
+                case 'up':
+                    movePlayer(0, -1);
+                    break;
+                case 'right':
+                    movePlayer(1, 0);
+                    break;
+                case 'down':
+                    movePlayer(0, 1);
+                    break;
+                case 'left':
+                    movePlayer(-1, 0);
+                    break;
+                case 'menu':
+                    gameState.currentScreen = 'collection';
+                    updateDisplay();
+                    break;
+                case 'start':
+                    // Open pause menu or other function
+                    break;
+            }
+        }
+
+        // Handle battle controls
+        function handleBattleControls(direction) {
+            const optionsCount = 4; // Number of battle options
+            
+            switch (direction) {
+                case 'up':
+                    gameState.selectedMenuOption = (gameState.selectedMenuOption - 2 + optionsCount) % optionsCount;
+                    break;
+                case 'right':
+                    gameState.selectedMenuOption = (gameState.selectedMenuOption + 1) % optionsCount;
+                    break;
+                case 'down':
+                    gameState.selectedMenuOption = (gameState.selectedMenuOption + 2) % optionsCount;
+                    break;
+                case 'left':
+                    gameState.selectedMenuOption = (gameState.selectedMenuOption - 1 + optionsCount) % optionsCount;
+                    break;
+                case 'select':
+                    const actions = ['attack', 'special', 'capture', 'escape'];
+                    handleBattleAction(actions[gameState.selectedMenuOption]);
+                    break;
+                case 'back':
+                    // Try to run
+                    handleBattleAction('escape');
+                    break;
+            }
+            
+            updateMenuSelection();
+        }
+
+        // Handle keyboard input
+        function handleKeyboardInput(event) {
+            switch (event.key) {
+                case 'ArrowUp':
+                    navigate('up');
+                    break;
+                case 'ArrowRight':
+                    navigate('right');
+                    break;
+                case 'ArrowDown':
+                    navigate('down');
+                    break;
+                case 'ArrowLeft':
+                    navigate('left');
+                    break;
+                case 'z':
+                case 'Z':
+                    navigate('select'); // A button
+                    break;
+                case 'x':
+                case 'X':
+                    navigate('back'); // B button
+                    break;
+                case 'Enter':
+                    navigate('start'); // Start button
+                    break;
+                case 'Tab':
+                    navigate('menu'); // Select button
+                    event.preventDefault();
+                    break;
+            }
+        }
+
+        // Start the game
+        function startGame() {
+            gameState.started = true;
+            gameState.currentScreen = 'exploration';
+            gameState.playerPosition = { x: 2, y: 2 };
+            gameState.collection = [];
+            
+            // Reset player stats
+            gameState.playerStats = {
+                level: 1,
+                maxHp: 30,
+                currentHp: 30,
+                attack: 5,
+                defense: 3,
+                special: 8
+            };
+            
+            gameText.textContent = `${gameState.playerName} begins the adventure! Use the D-pad to move around.`;
+            generateTerrain();
+            updateDisplay();
         }
 
         // Change player name
         function promptNameChange() {
-            const newName = prompt("Enter your trainer name:", "SkwidBOI");
-            if (newName !== null && newName.trim() !== "") {
-                document.querySelector('.gameboy-label').innerText = newName;
+            const newName = prompt("Enter your character's name:", gameState.playerName);
+            if (newName && newName.length > 0 && newName.length <= 10) {
+                gameState.playerName = newName;
+                if (gameState.started) {
+                    gameText.textContent = `${gameState.playerName} continues the adventure!`;
+                }
             }
         }
+
+        // Initialize the game when the page loads
+        window.onload = function() {
+            initGame();
+        };
     </script>
 </body>
 </html>
