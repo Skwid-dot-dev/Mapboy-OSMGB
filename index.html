@@ -24,23 +24,23 @@
 
         <!-- Control Layout -->
         <div id="controls">
-            <!-- D-Pad -->
-            <div id="dpad">
-                <button id="up" onclick="navigate('up')">▲</button>
-                <div class="middle-row">
-                    <button id="left" onclick="navigate('left')">◄</button>
-                    <button id="center">•</button> <!-- Static center -->
-                    <button id="right" onclick="navigate('right')">►</button>
-                </div>
-                <button id="down" onclick="navigate('down')">▼</button>
-            </div>
-
-            <!-- Action Buttons (Positioned to the Right) -->
-            <div id="buttons">
-                <button id="b" onclick="navigate('back')">B</button>
-                <button id="a" onclick="navigate('select')">A</button>
-            </div>
+    <!-- Proper Plus-Shaped D-Pad -->
+    <div id="dpad">
+        <button id="up" onclick="navigate('up')">▲</button>
+        <div class="middle-row">
+            <button id="left" onclick="navigate('left')">◄</button>
+            <button id="center"></button> <!-- Static center space -->
+            <button id="right" onclick="navigate('right')">►</button>
         </div>
+        <button id="down" onclick="navigate('down')">▼</button>
+    </div>
+
+    <!-- Action Buttons on the Right -->
+    <div id="buttons">
+        <button id="b" onclick="navigate('back')">B</button>
+        <button id="a" onclick="navigate('select')">A</button>
+    </div>
+</div>
 
         <button id="nameButton" onclick="promptNameChange()">Set Name</button>
     </div>
