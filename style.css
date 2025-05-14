@@ -58,26 +58,38 @@ html, body {
     margin-top: 20px;
 }
 
-/* D-Pad Layout */
+/* D-Pad Layout (Uniform Size for All Buttons) */
 #dpad {
     display: grid;
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 50px);
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
     gap: 5px;
     justify-content: center;
 }
 
+button {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    background: #0f380f;
+    color: #e0f8d0;
+    border: 2px solid #8bac0f;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+/* Assign Each D-Pad Button to a Grid Position */
 #up { grid-column: 2; grid-row: 1; }
 #left { grid-column: 1; grid-row: 2; }
 #center { grid-column: 2; grid-row: 2; background: none; border: none; }
 #right { grid-column: 3; grid-row: 2; }
 #down { grid-column: 2; grid-row: 3; }
 
-/* Position Action Buttons to the Right */
+/* A & B Buttons on the Right */
 #buttons {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
     margin-left: 20px;
 }
 
