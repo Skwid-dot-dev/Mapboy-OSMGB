@@ -58,24 +58,21 @@ html, body {
     margin-top: 20px;
 }
 
-/* Proper Plus-Shaped D-Pad */
+/* Correctly Structured D-Pad */
 #dpad {
-    display: grid;
-    grid-template-columns: 60px 60px 60px;
-    grid-template-rows: 60px 60px 60px;
-    gap: 5px;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     position: relative;
 }
 
-/* Individual button placement */
-#up { grid-column: 2; grid-row: 1; }
-#left { grid-column: 1; grid-row: 2; }
-#center { grid-column: 2; grid-row: 2; background: none; border: none; }
-#right { grid-column: 3; grid-row: 2; }
-#down { grid-column: 2; grid-row: 3; }
+.horizontal-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
 
-/* Make all buttons uniform */
+/* Ensure all buttons are equal size */
 button {
     width: 60px;
     height: 60px;
@@ -87,7 +84,7 @@ button {
     border-radius: 10px;
 }
 
-/* Position A/B Buttons to the Right */
+/* Position A/B Buttons on the Right */
 #buttons {
     display: flex;
     flex-direction: column;
