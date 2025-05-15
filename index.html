@@ -716,29 +716,44 @@
         }
 
         // Handle map navigation
-        function moveMap(dx, dy) {
-            // Get current center
-            const center = map.getCenter();
-            
-            // Calculate new center based on current zoom level
-            // Adjust step size based on zoom
-            const zoomFactor = Math.pow(2, (18 - gameState.zoomLevel));
-            const adjustedStep = gameState.moveStep * zoomFactor;
-            
-            // Set new center
-            map.panTo([center.lat + (dy * adjustedStep), center.lng + (dx * adjustedStep)]);
-            
-            // Update display
-            gameText.textContent = "Moving map...";
-        }
-
+    function moveMap(dx, dy) {
+        // Get current center
+        const center = map.getCenter();
+        
+        // Calculate new center based on current zoom level
+        // Adjust step size based on zoom
+        const zoomFactor = Math.pow(2, (18 - gameState.zoomLevel));
+        const adjustedStep = gameState.moveStep * zoomFactor;
+        
+        // Set new center with smooth animation
+        map.flyTo(
+            [center.lat + (dy * adjustedStep), center.lng + (dx * adjustedStep)],
+            gameState.zoomLevel,
+            {
+                duration: 0.5,
+                easeLinearity: 0.5
+            }
+        );
+    
+    // Update display
+    gameText.textContent = "Moving map...";
+}
         // Handle zoom in/out
-        function zoomMap(delta) {
-            const newZoom = Math.max(1, Math.min(18, gameState.zoomLevel + delta));
-            map.setZoom(newZoom);
-            
-            gameText.textContent = delta > 0 ? "Zooming in..." : "Zooming out...";
+function zoomMap(delta) {
+    const newZoom = Math.max(1, Math.min(18, gameState.zoomLevel + delta));
+    const center = map.getCenter();
+    
+    map.flyTo(
+        [center.lat, center.lng],
+        newZoom,
+        {
+            duration: 0.7,
+            easeLinearity: 0.5
         }
+    );
+    
+    gameText.textContent = delta > 0 ? "Zooming in..." : "Zooming out...";
+}
 
         // Toggle search input
         function toggleSearch() {
