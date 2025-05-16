@@ -440,6 +440,18 @@
             padding: 2px;
         }
 
+        /* Mode indicator */
+        .mode-indicator {
+            position: absolute;
+            top: 5px;
+            right: 50px;
+            font-size: 7px;
+            color: #0f380f;
+            z-index: 10;
+            background-color: rgba(139, 172, 15, 0.7);
+            padding: 2px;
+        }
+
         /* Custom map style for leaflet */
         .leaflet-container {
             background-color: #8bac0f !important;
@@ -461,6 +473,77 @@
         
         .leaflet-marker-icon {
             filter: brightness(0.7) !important;
+        }
+
+        /* Mode switch styles */
+        .mode-switch {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #0f380f;
+            padding-bottom: 5px;
+        }
+
+        .mode-option {
+            font-size: 8px;
+            padding: 3px;
+            cursor: pointer;
+        }
+
+        .mode-option.selected {
+            background-color: #0f380f;
+            color: #8bac0f;
+        }
+
+        /* Guesser mode styles */
+        .guesser-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            padding: 5px;
+            position: relative;
+        }
+
+        .guesser-info {
+            font-size: 8px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .guesser-score {
+            position: absolute;
+            top: 25px;
+            right: 5px;
+            font-size: 7px;
+            color: #0f380f;
+            z-index: 10;
+            background-color: rgba(139, 172, 15, 0.7);
+            padding: 2px;
+        }
+
+        .guesser-target {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 7px;
+            color: #0f380f;
+            z-index: 10;
+            background-color: rgba(139, 172, 15, 0.7);
+            padding: 2px;
+            text-align: center;
+        }
+
+        .guesser-distance {
+            position: absolute;
+            top: 45px;
+            right: 5px;
+            font-size: 7px;
+            color: #0f380f;
+            z-index: 10;
+            background-color: rgba(139, 172, 15, 0.7);
+            padding: 2px;
         }
     </style>
 </head>
@@ -487,6 +570,9 @@
                     <!-- Zoom level display -->
                     <div class="zoom-level" id="zoom-level">Z: 12</div>
                     
+                    <!-- Mode display -->
+                    <div class="mode-indicator" id="mode-indicator">NAV</div>
+                    
                     <!-- Status/information text -->
                     <div id="game-text">Welcome to MAPBOY! Press START to begin exploring.</div>
                 </div>
@@ -494,6 +580,10 @@
                 <!-- Info screen (shown when select is pressed) -->
                 <div class="info-screen" id="info-screen">
                     <div class="info-title">MAP INFO</div>
+                    <div class="mode-switch">
+                        <div class="mode-option selected" id="nav-mode">Navigation</div>
+                        <div class="mode-option" id="guesser-mode">Guesser</div>
+                    </div>
                     <div class="info-content" id="info-content">
                         MapBoy is a retro-style OpenStreetMap explorer.
                         
@@ -506,6 +596,17 @@
                         
                         Press B to return to the map.
                     </div>
+                </div>
+                
+                <!-- Guesser mode screen -->
+                <div class="guesser-screen" id="guesser-screen">
+                    <div id="guesser-map"></div>
+                    <div class="coordinates" id="guesser-coordinates">Lat: 0.000, Lng: 0.000</div>
+                    <div class="zoom-level" id="guesser-zoom-level">Z: 12</div>
+                    <div class="guesser-score" id="guesser-score">Score: 0</div>
+                    <div class="guesser-distance" id="guesser-distance"></div>
+                    <div class="guesser-target" id="guesser-target">Find: ???</div>
+                    <div id="guesser-text" class="game-text">Use D-pad to move. Press A to guess location.</div>
                 </div>
                 
                 <!-- Search results screen -->
@@ -583,20 +684,41 @@
         // Game state
         const gameState = {
             started: false,
-            currentScreen: 'title', // title, map, info, search, details
+            currentScreen: 'title', // title, map, info, search, results, details, guesser
             mapCenter: [51.505, -0.09], // Default to London
             zoomLevel: 12,
             moveStep: 0.001, // How much to move when pressing d-pad
             markers: [],
             selectedResult: null,
             searchQuery: '',
-            lastSearchResults: []
+            lastSearchResults: [],
+            gameMode: 'navigation', // 'navigation' or 'guesser'
+            
+            // Guesser game state
+            guesserScore: 0,
+            guesserTarget: null,
+            guesserGuess: null,
+            guesserDistance: null,
+            guesserRound: 0,
+            guesserLocations: [
+                { name: "Eiffel Tower", lat: 48.8584, lng: 2.2945 },
+                { name: "Statue of Liberty", lat: 40.6892, lng: -74.0445 },
+                { name: "Sydney Opera House", lat: -33.8568, lng: 151.2153 },
+                { name: "Taj Mahal", lat: 27.1751, lng: 78.0421 },
+                { name: "Pyramids of Giza", lat: 29.9792, lng: 31.1342 },
+                { name: "Colosseum", lat: 41.8902, lng: 12.4922 },
+                { name: "Machu Picchu", lat: -13.1631, lng: -72.5450 },
+                { name: "Christ the Redeemer", lat: -22.9519, lng: -43.2106 },
+                { name: "Great Wall of China", lat: 40.4319, lng: 116.5704 },
+                { name: "Mount Fuji", lat: 35.3606, lng: 138.7274 }
+            ]
         };
 
         // DOM elements
         const gameText = document.getElementById('game-text');
         const coordinates = document.getElementById('coordinates');
         const zoomLevelDisplay = document.getElementById('zoom-level');
+        const modeIndicator = document.getElementById('mode-indicator');
         const gameDisplay = document.querySelector('.game-display');
         const infoScreen = document.getElementById('info-screen');
         const infoContent = document.getElementById('info-content');
@@ -605,14 +727,25 @@
         const placeDetails = document.getElementById('place-details');
         const placeDetailsContent = document.getElementById('place-details-content');
         const searchInput = document.getElementById('searchInput');
+        const guesserScreen = document.getElementById('guesser-screen');
+        const guesserCoordinates = document.getElementById('guesser-coordinates');
+        const guesserZoomLevel = document.getElementById('guesser-zoom-level');
+        const guesserScore = document.getElementById('guesser-score');
+        const guesserDistance = document.getElementById('guesser-distance');
+        const guesserTarget = document.getElementById('guesser-target');
+        const guesserText = document.getElementById('guesser-text');
+        const navModeButton = document.getElementById('nav-mode');
+        const guesserModeButton = document.getElementById('guesser-mode');
 
-        // Map object
+        // Map objects
         let map;
+        let guesserMap;
 
         // Initialize the game
         function initGame() {
             // Initialize the map (hidden until game starts)
             initMap();
+            initGuesserMap();
             
             // Add keyboard controls
             document.addEventListener('keydown', handleKeyboardInput);
@@ -633,9 +766,13 @@
                     performSearch(searchInput.value);
                 }
             });
+            
+            // Add mode switch event listeners
+            navModeButton.addEventListener('click', () => switchMode('navigation'));
+            guesserModeButton.addEventListener('click', () => switchMode('guesser'));
         }
 
-        // Initialize Leaflet map
+        // Initialize Leaflet map for navigation mode
         function initMap() {
             // Create map
             map = L.map('map', {
@@ -665,343 +802,97 @@
             updateZoomLevel();
         }
 
-        // Update coordinates display
+        // Initialize Leaflet map for guesser mode
+        function initGuesserMap() {
+            // Create guesser map
+            guesserMap = L.map('guesser-map', {
+                center: gameState.mapCenter,
+                zoom: gameState.zoomLevel,
+                zoomControl: false,
+                attributionControl: true,
+                dragging: false,
+                doubleClickZoom: false,
+                scrollWheelZoom: false
+            });
+            
+            // Add tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 18,
+                tileSize: 256,
+                zoomOffset: 0
+            }).addTo(guesserMap);
+            
+            // Listen for map move end event to update coordinates
+            guesserMap.on('moveend', updateGuesserCoordinates);
+            guesserMap.on('zoomend', updateGuesserZoomLevel);
+            
+            // Initial coordinate update
+            updateGuesserCoordinates();
+            updateGuesserZoomLevel();
+        }
+
+        // Update coordinates display for navigation mode
         function updateCoordinates() {
             const center = map.getCenter();
             coordinates.textContent = `Lat: ${center.lat.toFixed(4)}, Lng: ${center.lng.toFixed(4)}`;
         }
 
-        // Update zoom level display
+        // Update zoom level display for navigation mode
         function updateZoomLevel() {
             gameState.zoomLevel = map.getZoom();
             zoomLevelDisplay.textContent = `Z: ${gameState.zoomLevel}`;
         }
 
-        // Update the game display based on current screen
-        function updateDisplay() {
-            gameDisplay.style.display = 'none';
-            infoScreen.style.display = 'none';
-            searchResults.style.display = 'none';
-            placeDetails.style.display = 'none';
-            searchInput.style.display = 'none';
+        // Update coordinates display for guesser mode
+        function updateGuesserCoordinates() {
+            const center = guesserMap.getCenter();
+            guesserCoordinates.textContent = `Lat: ${center.lat.toFixed(4)}, Lng: ${center.lng.toFixed(4)}`;
+        }
+
+        // Update zoom level display for guesser mode
+        function updateGuesserZoomLevel() {
+            guesserZoomLevel.textContent = `Z: ${guesserMap.getZoom()}`;
+        }
+
+        // Switch between navigation and guesser mode
+        function switchMode(mode) {
+            gameState.gameMode = mode;
             
-            switch (gameState.currentScreen) {
-                case 'title':
-                    gameDisplay.style.display = 'flex';
-                    gameText.textContent = "Welcome to MAPBOY! Press START to begin exploring.";
-                    break;
+            // Update UI
+            if (mode === 'navigation') {
+                navModeButton.classList.add('selected');
+                guesserModeButton.classList.remove('selected');
+                modeIndicator.textContent = 'NAV';
+                infoContent.innerHTML = `
+                    MapBoy is a retro-style OpenStreetMap explorer.
                     
-                case 'map':
-                    gameDisplay.style.display = 'flex';
-                    gameText.textContent = "Exploring OpenStreetMap. Use D-pad to navigate.";
-                    break;
+                    Controls:
+                    - D-Pad: Move the map
+                    - A: Zoom in
+                    - B: Zoom out
+                    - START: Toggle search
+                    - SELECT: Show this info
                     
-                case 'info':
-                    infoScreen.style.display = 'flex';
-                    break;
+                    Press B to return to the map.
+                `;
+            } else if (mode === 'guesser') {
+                navModeButton.classList.remove('selected');
+                guesserModeButton.classList.add('selected');
+                modeIndicator.textContent = 'GUESS';
+                infoContent.innerHTML = `
+                    Guesser Mode:
+                    Test your geography skills!
                     
-                case 'search':
-                    searchInput.style.display = 'block';
-                    gameDisplay.style.display = 'flex';
-                    break;
+                    How to play:
+                    - Find the landmark shown at the bottom
+                    - Use D-Pad to navigate the map
+                    - Press A to make your guess
+                    - The closer you are, the more points you get!
                     
-                case 'results':
-                    searchResults.style.display = 'flex';
-                    break;
-                    
-                case 'details':
-                    placeDetails.style.display = 'flex';
-                    break;
+                    Press B to start a game.
+                `;
             }
-        }
-
-        // Handle map navigation
-    function moveMap(dx, dy) {
-        // Get current center
-        const center = map.getCenter();
-        
-        // Calculate new center based on current zoom level
-        // Adjust step size based on zoom
-        const zoomFactor = Math.pow(2, (18 - gameState.zoomLevel));
-        const adjustedStep = gameState.moveStep * zoomFactor;
-        
-        // Set new center with smooth animation
-        map.flyTo(
-            [center.lat + (dy * adjustedStep), center.lng + (dx * adjustedStep)],
-            gameState.zoomLevel,
-            {
-                duration: 0.5,
-                easeLinearity: 0.5
-            }
-        );
-    
-    // Update display
-    gameText.textContent = "Moving map...";
-}
-        // Handle zoom in/out
-function zoomMap(delta) {
-    const newZoom = Math.max(1, Math.min(18, gameState.zoomLevel + delta));
-    const center = map.getCenter();
-    
-    map.flyTo(
-        [center.lat, center.lng],
-        newZoom,
-        {
-            duration: 0.7,
-            easeLinearity: 0.5
-        }
-    );
-    
-    gameText.textContent = delta > 0 ? "Zooming in..." : "Zooming out...";
-}
-
-        // Toggle search input
-        function toggleSearch() {
-            if (gameState.currentScreen === 'search') {
-                gameState.currentScreen = 'map';
-                searchInput.value = '';
-            } else {
-                gameState.currentScreen = 'search';
-                setTimeout(() => {
-                    searchInput.focus();
-                }, 100);
-            }
-            updateDisplay();
-        }
-
-        // Perform search using OpenStreetMap Nominatim API
-        function performSearch(query) {
-            if (!query.trim()) return;
-            
-            gameState.searchQuery = query;
-            gameText.textContent = "Searching for: " + query;
-            searchInput.style.display = 'none';
-            
-            // Clear previous results
-            gameState.lastSearchResults = [];
-            clearMarkers();
-            
-            // Call OSM Nominatim API
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Process results
-                    gameState.lastSearchResults = data;
-                    displaySearchResults(data);
-                })
-                .catch(error => {
-                    gameText.textContent = "Search failed. Try again.";
-                    console.error("Search error:", error);
-                    gameState.currentScreen = 'map';
-                    updateDisplay();
-                });
-        }
-
-        // Display search results
-        function displaySearchResults(results) {
-            resultsContainer.innerHTML = '';
-            
-            if (results.length === 0) {
-                const noResults = document.createElement('div');
-                noResults.classList.add('search-result');
-                noResults.textContent = "No results found.";
-                resultsContainer.appendChild(noResults);
-            } else {
-                results.forEach((result, index) => {
-                    const resultItem = document.createElement('div');
-                    resultItem.classList.add('search-result');
-                    resultItem.textContent = result.display_name.substring(0, 40) + (result.display_name.length > 40 ? '...' : '');
-                    resultItem.setAttribute('data-index', index);
-                    resultItem.addEventListener('click', () => selectSearchResult(index));
-                    resultsContainer.appendChild(resultItem);
-                });
-            }
-            
-            gameState.currentScreen = 'results';
-            updateDisplay();
-        }
-
-        // Select a search result
-        function selectSearchResult(index) {
-            const result = gameState.lastSearchResults[index];
-            if (!result) return;
-            
-            gameState.selectedResult = result;
-            
-            // Add marker for the selected location
-            clearMarkers();
-            addMarker(result.lat, result.lon, result.display_name);
-            
-            // Center map on selected location
-            map.setView([result.lat, result.lon], gameState.zoomLevel);
-            
-            // Display place details
-            displayPlaceDetails(result);
-        }
-
-        // Add marker to the map
-        function addMarker(lat, lon, title) {
-            const marker = L.marker([lat, lon])
-                .addTo(map)
-                .bindPopup(title);
-            
-            gameState.markers.push(marker);
-        }
-
-        // Clear all markers from the map
-        function clearMarkers() {
-            gameState.markers.forEach(marker => map.removeLayer(marker));
-            gameState.markers = [];
-        }
-
-        // Display details for a place
-        function displayPlaceDetails(place) {
-            placeDetailsContent.innerHTML = '';
-            
-            // Create detail elements
-            const nameElement = document.createElement('p');
-            nameElement.style.fontWeight = 'bold';
-            nameElement.style.marginBottom = '5px';
-            nameElement.textContent = place.display_name.substring(0, 200);
-            
-            const typeElement = document.createElement('p');
-            typeElement.textContent = `Type: ${place.type || 'Unknown'}`;
-            
-            const coordsElement = document.createElement('p');
-            coordsElement.textContent = `Lat: ${place.lat}, Lng: ${place.lon}`;
-            
-            const importanceElement = document.createElement('p');
-            importanceElement.textContent = `Importance: ${parseFloat(place.importance || 0).toFixed(2)}`;
-            
-            // Add OSM ID if available
-            const osmIdElement = document.createElement('p');
-            osmIdElement.textContent = `OSM ID: ${place.osm_id || 'N/A'}`;
-            
-            // Add elements to the container
-            placeDetailsContent.appendChild(nameElement);
-            placeDetailsContent.appendChild(typeElement);
-            placeDetailsContent.appendChild(coordsElement);
-            placeDetailsContent.appendChild(importanceElement);
-            placeDetailsContent.appendChild(osmIdElement);
-            
-            // Add action hint
-            const actionHint = document.createElement('p');
-            actionHint.style.marginTop = '10px';
-            actionHint.textContent = "Press A to go to this location, B to return";
-            placeDetailsContent.appendChild(actionHint);
-            
-            // Show the details screen
-            gameState.currentScreen = 'details';
-            updateDisplay();
-        }
-
-        // Navigation and button controls
-        function navigate(direction) {
-            if (!gameState.started && direction === 'start') {
-                startGame();
-                return;
-            }
-            
-            if (!gameState.started) return;
-            
-            switch (gameState.currentScreen) {
-                case 'map':
-                    handleMapControls(direction);
-                    break;
-                    
-                case 'info':
-                    if (direction === 'b' || direction === 'select') {
-                        gameState.currentScreen = 'map';
-                        updateDisplay();
-                    }
-                    break;
-                    
-                case 'search':
-                    if (direction === 'b') {
-                        gameState.currentScreen = 'map';
-                        updateDisplay();
-                    }
-                    break;
-                    
-                case 'results':
-                    handleResultsControls(direction);
-                    break;
-                    
-                case 'details':
-                    handleDetailsControls(direction);
-                    break;
-            }
-        }
-
-        // Handle map screen controls
-        function handleMapControls(direction) {
-            switch (direction) {
-                case 'up':
-                    moveMap(0, 1);
-                    break;
-                case 'right':
-                    moveMap(1, 0);
-                    break;
-                case 'down':
-                    moveMap(0, -1);
-                    break;
-                case 'left':
-                    moveMap(-1, 0);
-                    break;
-                case 'a':
-                    zoomMap(1);
-                    break;
-                case 'b':
-                    zoomMap(-1);
-                    break;
-                case 'select':
-                    gameState.currentScreen = 'info';
-                    updateDisplay();
-                    break;
-                case 'start':
-                    toggleSearch();
-                    break;
-            }
-        }
-
-        // Handle results screen controls
-        function handleResultsControls(direction) {
-            switch (direction) {
-                case 'b':
-                    gameState.currentScreen = 'map';
-                    updateDisplay();
-                    break;
-                case 'a':
-                    if (gameState.lastSearchResults.length > 0) {
-                        selectSearchResult(0);
-                    }
-                    break;
-            }
-        }
-
-        // Handle details screen controls
-        function handleDetailsControls(direction) {
-            switch (direction) {
-                case 'a':
-                    if (gameState.selectedResult) {
-                        map.setView([gameState.selectedResult.lat, gameState.selectedResult.lon], gameState.zoomLevel);
-                        gameState.currentScreen = 'map';
-                        updateDisplay();
-                    }
-                    break;
-                case 'b':
-                    gameState.currentScreen = 'results';
-                    updateDisplay();
-                    break;
-            }
-        }
-
-        // Start the game
-        function startGame() {
-            gameState.started = true;
-            gameState.currentScreen = 'map';
-            updateDisplay();
-            gameText.textContent = "Explore the world with MapBoy!";
         }
 
         // Handle keyboard input
@@ -1025,23 +916,557 @@ function zoomMap(delta) {
                 case 'x': // B button
                     navigate('b');
                     break;
-                case 'Shift': // Select button
+                case 'Backspace': // Select button
                     navigate('select');
                     break;
                 case 'Enter': // Start button
                     navigate('start');
                     break;
-                case 'Escape': // Close search
-                    if (gameState.currentScreen === 'search') {
-                        gameState.currentScreen = 'map';
-                        updateDisplay();
+            }
+        }
+
+        // Navigation and interaction logic
+        function navigate(direction) {
+            if (gameState.currentScreen === 'title') {
+                // Title screen interaction
+                if (direction === 'start') {
+                    startGame();
+                }
+            } else if (gameState.currentScreen === 'map') {
+                // Map screen interaction
+                handleMapNavigation(direction);
+            } else if (gameState.currentScreen === 'info') {
+                // Info screen interaction
+                handleInfoNavigation(direction);
+            } else if (gameState.currentScreen === 'search') {
+                // Search input interaction
+                handleSearchNavigation(direction);
+            } else if (gameState.currentScreen === 'results') {
+                // Search results interaction
+                handleResultsNavigation(direction);
+            } else if (gameState.currentScreen === 'details') {
+                // Place details interaction
+                handleDetailsNavigation(direction);
+            } else if (gameState.currentScreen === 'guesser') {
+                // Guesser mode interaction
+                handleGuesserNavigation(direction);
+            }
+        }
+
+        // Handle navigation on the map screen
+        function handleMapNavigation(direction) {
+            switch (direction) {
+                case 'up':
+                    moveMap('up');
+                    break;
+                case 'right':
+                    moveMap('right');
+                    break;
+                case 'down':
+                    moveMap('down');
+                    break;
+                case 'left':
+                    moveMap('left');
+                    break;
+                case 'a':
+                    zoomMap('in');
+                    break;
+                case 'b':
+                    zoomMap('out');
+                    break;
+                case 'select':
+                    showInfoScreen();
+                    break;
+                case 'start':
+                    toggleSearch();
+                    break;
+            }
+        }
+
+        // Handle navigation on the info screen
+        function handleInfoNavigation(direction) {
+            switch (direction) {
+                case 'b':
+                    if (gameState.gameMode === 'navigation') {
+                        showMapScreen();
+                    } else {
+                        startGuesserGame();
                     }
                     break;
             }
         }
 
-        // Initialize game when page loads
-        window.addEventListener('load', initGame);
+        // Handle navigation on the search input screen
+        function handleSearchNavigation(direction) {
+            switch (direction) {
+                case 'b':
+                    hideSearch();
+                    break;
+                case 'start':
+                    performSearch(searchInput.value);
+                    break;
+            }
+        }
+
+        // Handle navigation on the search results screen
+        function handleResultsNavigation(direction) {
+            switch (direction) {
+                case 'up':
+                    selectPreviousResult();
+                    break;
+                case 'down':
+                    selectNextResult();
+                    break;
+                case 'a':
+                    viewSelectedResult();
+                    break;
+                case 'b':
+                    showMapScreen();
+                    break;
+            }
+        }
+
+        // Handle navigation on the place details screen
+        function handleDetailsNavigation(direction) {
+            switch (direction) {
+                case 'b':
+                    showMapScreen();
+                    break;
+            }
+        }
+
+        // Handle navigation in guesser mode
+        function handleGuesserNavigation(direction) {
+            switch (direction) {
+                case 'up':
+                    moveGuesserMap('up');
+                    break;
+                case 'right':
+                    moveGuesserMap('right');
+                    break;
+                case 'down':
+                    moveGuesserMap('down');
+                    break;
+                case 'left':
+                    moveGuesserMap('left');
+                    break;
+                case 'a':
+                    makeGuess();
+                    break;
+                case 'b':
+                    if (gameState.guesserGuess) {
+                        // If we've already made a guess, start a new round
+                        startNextGuesserRound();
+                    } else {
+                        // Otherwise go back to the map
+                        showMapScreen();
+                    }
+                    break;
+                case 'select':
+                    showInfoScreen();
+                    break;
+            }
+        }
+
+        // Start the game
+        function startGame() {
+            gameState.started = true;
+            gameState.currentScreen = 'map';
+            showMapScreen();
+            gameText.textContent = 'Use D-Pad to navigate, A to zoom in, B to zoom out.';
+        }
+
+        // Move the map based on direction
+        function moveMap(direction) {
+            const center = map.getCenter();
+            let newLat = center.lat;
+            let newLng = center.lng;
+            
+            // Calculate how much to move based on zoom level
+            const moveAmount = gameState.moveStep * Math.pow(2, (18 - gameState.zoomLevel));
+            
+            switch (direction) {
+                case 'up':
+                    newLat += moveAmount;
+                    break;
+                case 'right':
+                    newLng += moveAmount;
+                    break;
+                case 'down':
+                    newLat -= moveAmount;
+                    break;
+                case 'left':
+                    newLng -= moveAmount;
+                    break;
+            }
+            
+            // Update map center
+            map.panTo([newLat, newLng]);
+            gameText.textContent = `Moving ${direction}...`;
+        }
+
+        // Move the guesser map based on direction
+        function moveGuesserMap(direction) {
+            const center = guesserMap.getCenter();
+            let newLat = center.lat;
+            let newLng = center.lng;
+            
+            // Calculate how much to move based on zoom level
+            const moveAmount = gameState.moveStep * Math.pow(2, (18 - guesserMap.getZoom()));
+            
+            switch (direction) {
+                case 'up':
+                    newLat += moveAmount;
+                    break;
+                case 'right':
+                    newLng += moveAmount;
+                    break;
+                case 'down':
+                    newLat -= moveAmount;
+                    break;
+                case 'left':
+                    newLng -= moveAmount;
+                    break;
+            }
+            
+            // Update map center
+            guesserMap.panTo([newLat, newLng]);
+            guesserText.textContent = `Moving ${direction}...`;
+        }
+
+        // Zoom the map in or out
+        function zoomMap(direction) {
+            const currentZoom = map.getZoom();
+            
+            if (direction === 'in' && currentZoom < 18) {
+                map.setZoom(currentZoom + 1);
+                gameText.textContent = 'Zooming in...';
+            } else if (direction === 'out' && currentZoom > 3) {
+                map.setZoom(currentZoom - 1);
+                gameText.textContent = 'Zooming out...';
+            } else {
+                gameText.textContent = `Cannot zoom ${direction} further.`;
+            }
+        }
+
+        // Show the info screen
+        function showInfoScreen() {
+            gameState.currentScreen = 'info';
+            gameDisplay.style.display = 'none';
+            infoScreen.style.display = 'flex';
+            searchResults.style.display = 'none';
+            placeDetails.style.display = 'none';
+            guesserScreen.style.display = 'none';
+        }
+
+        // Show the map screen
+        function showMapScreen() {
+            gameState.currentScreen = 'map';
+            gameDisplay.style.display = 'flex';
+            infoScreen.style.display = 'none';
+            searchResults.style.display = 'none';
+            placeDetails.style.display = 'none';
+            guesserScreen.style.display = 'none';
+            gameText.textContent = 'Use D-Pad to navigate, A to zoom in, B to zoom out.';
+        }
+
+        // Toggle search input visibility
+        function toggleSearch() {
+            if (gameState.currentScreen === 'map') {
+                gameState.currentScreen = 'search';
+                searchInput.style.display = 'block';
+                searchInput.focus();
+                gameText.textContent = 'Enter location to search...';
+            } else if (gameState.currentScreen === 'search') {
+                hideSearch();
+            }
+        }
+
+        // Hide search input
+        function hideSearch() {
+            gameState.currentScreen = 'map';
+            searchInput.style.display = 'none';
+            gameText.textContent = 'Search cancelled.';
+        }
+
+        // Perform location search using Nominatim API
+        function performSearch(query) {
+            if (!query.trim()) {
+                gameText.textContent = 'Please enter a search term.';
+                return;
+            }
+            
+            gameText.textContent = 'Searching...';
+            
+            // Use Nominatim API for geocoding
+            const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+            
+            fetch(searchUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        showSearchResults(data);
+                    } else {
+                        gameText.textContent = 'No results found.';
+                        setTimeout(() => {
+                            hideSearch();
+                        }, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    gameText.textContent = 'Search error. Try again.';
+                });
+        }
+
+        // Show search results
+        function showSearchResults(results) {
+            gameState.currentScreen = 'results';
+            gameState.lastSearchResults = results;
+            
+            // Hide other screens
+            gameDisplay.style.display = 'none';
+            infoScreen.style.display = 'none';
+            searchInput.style.display = 'none';
+            placeDetails.style.display = 'none';
+            
+            // Show results screen
+            searchResults.style.display = 'flex';
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
+            // Add new results
+            results.forEach((result, index) => {
+                const resultElement = document.createElement('div');
+                resultElement.className = 'search-result';
+                resultElement.textContent = result.display_name.substring(0, 50) + (result.display_name.length > 50 ? '...' : '');
+                resultElement.dataset.index = index;
+                
+                resultElement.addEventListener('click', () => {
+                    gameState.selectedResult = index;
+                    viewSelectedResult();
+                });
+                
+                resultsContainer.appendChild(resultElement);
+            });
+            
+            // Select first result
+            gameState.selectedResult = 0;
+            highlightSelectedResult();
+        }
+
+        // Highlight the selected search result
+        function highlightSelectedResult() {
+            const results = document.querySelectorAll('.search-result');
+            
+            results.forEach((result, index) => {
+                if (index === gameState.selectedResult) {
+                    result.style.backgroundColor = '#0f380f';
+                    result.style.color = '#8bac0f';
+                } else {
+                    result.style.backgroundColor = '';
+                    result.style.color = '';
+                }
+            });
+        }
+
+        // Select the previous search result
+        function selectPreviousResult() {
+            if (gameState.selectedResult > 0) {
+                gameState.selectedResult--;
+                highlightSelectedResult();
+            }
+        }
+
+        // Select the next search result
+        function selectNextResult() {
+            if (gameState.selectedResult < gameState.lastSearchResults.length - 1) {
+                gameState.selectedResult++;
+                highlightSelectedResult();
+            }
+        }
+
+        // View the selected search result
+        function viewSelectedResult() {
+            const result = gameState.lastSearchResults[gameState.selectedResult];
+            
+            if (result) {
+                // Show details
+                showPlaceDetails(result);
+            }
+        }
+
+        // Show place details
+        function showPlaceDetails(place) {
+            gameState.currentScreen = 'details';
+            
+            // Hide other screens
+            gameDisplay.style.display = 'none';
+            infoScreen.style.display = 'none';
+            searchResults.style.display = 'none';
+            
+            // Show details screen
+            placeDetails.style.display = 'flex';
+            
+            // Format and display details
+            let detailsHTML = `
+                <p><strong>Name:</strong> ${place.display_name}</p>
+                <p><strong>Type:</strong> ${place.type}</p>
+                <p><strong>Coordinates:</strong> ${place.lat}, ${place.lon}</p>
+            `;
+            
+            if (place.address) {
+                detailsHTML += '<p><strong>Address:</strong></p>';
+                for (const key in place.address) {
+                    detailsHTML += `<p>${key}: ${place.address[key]}</p>`;
+                }
+            }
+            
+            detailsHTML += '<p>Press B to go to this location on the map.</p>';
+            
+            placeDetailsContent.innerHTML = detailsHTML;
+            
+            // Save location to go to when returning to map
+            gameState.mapCenter = [parseFloat(place.lat), parseFloat(place.lon)];
+        }
+
+        // Start the guesser game
+        function startGuesserGame() {
+            gameState.currentScreen = 'guesser';
+            gameState.guesserScore = 0;
+            gameState.guesserRound = 0;
+            gameState.guesserGuess = null;
+            
+            // Hide other screens
+            gameDisplay.style.display = 'none';
+            infoScreen.style.display = 'none';
+            searchResults.style.display = 'none';
+            placeDetails.style.display = 'none';
+            
+            // Show guesser screen
+            guesserScreen.style.display = 'flex';
+            
+            // Update score display
+            guesserScore.textContent = `Score: ${gameState.guesserScore}`;
+            
+            // Start the first round
+            startNextGuesserRound();
+        }
+
+        // Start the next round in guesser mode
+        function startNextGuesserRound() {
+            // Clear previous markers and state
+            clearGuesserMarkers();
+            gameState.guesserGuess = null;
+            gameState.guesserDistance = null;
+            
+            // Reset map view to a neutral location
+            guesserMap.setView([0, 0], 2);
+            
+            // Pick a random target location
+            gameState.guesserRound++;
+            const targetIndex = (gameState.guesserRound - 1) % gameState.guesserLocations.length;
+            gameState.guesserTarget = gameState.guesserLocations[targetIndex];
+            
+            // Update UI
+            guesserDistance.textContent = '';
+            guesserTarget.textContent = `Find: ${gameState.guesserTarget.name}`;
+            guesserText.textContent = 'Navigate to where you think this landmark is located and press A to guess.';
+        }
+
+        // Make a guess in guesser mode
+        function makeGuess() {
+            if (gameState.guesserGuess) {
+                // Already made a guess, ignore
+                return;
+            }
+            
+            // Get current map center as the guess location
+            const guessLocation = guesserMap.getCenter();
+            gameState.guesserGuess = {
+                lat: guessLocation.lat,
+                lng: guessLocation.lng
+            };
+            
+            // Calculate distance between guess and target
+            const distance = calculateDistance(
+                gameState.guesserGuess.lat, 
+                gameState.guesserGuess.lng,
+                gameState.guesserTarget.lat,
+                gameState.guesserTarget.lng
+            );
+            
+            gameState.guesserDistance = distance;
+            
+            // Calculate score (max 1000 points, decreases with distance)
+            let points = Math.max(0, Math.floor(1000 - (distance / 100)));
+            if (distance < 100) {
+                points = Math.floor(1000 - distance);
+            }
+            
+            gameState.guesserScore += points;
+            
+            // Update UI
+            guesserScore.textContent = `Score: ${gameState.guesserScore}`;
+            guesserDistance.textContent = `Distance: ${Math.round(distance)} km`;
+            guesserText.textContent = `You scored ${points} points! Press B for next round.`;
+            
+            // Add markers for guess and target
+            const guessMarker = L.marker([gameState.guesserGuess.lat, gameState.guesserGuess.lng])
+                .addTo(guesserMap)
+                .bindPopup('Your guess')
+                .openPopup();
+                
+            const targetMarker = L.marker([gameState.guesserTarget.lat, gameState.guesserTarget.lng])
+                .addTo(guesserMap)
+                .bindPopup(gameState.guesserTarget.name);
+                
+            const line = L.polyline([
+                [gameState.guesserGuess.lat, gameState.guesserGuess.lng],
+                [gameState.guesserTarget.lat, gameState.guesserTarget.lng]
+            ], {color: 'red'}).addTo(guesserMap);
+            
+            // Fit both markers on screen
+            const bounds = L.latLngBounds(
+                [gameState.guesserGuess.lat, gameState.guesserGuess.lng],
+                [gameState.guesserTarget.lat, gameState.guesserTarget.lng]
+            );
+            guesserMap.fitBounds(bounds, {padding: [20, 20]});
+            
+            // Store markers for later cleanup
+            gameState.markers.push(guessMarker, targetMarker, line);
+        }
+
+        // Clear all markers from the guesser map
+        function clearGuesserMarkers() {
+            gameState.markers.forEach(marker => {
+                guesserMap.removeLayer(marker);
+            });
+            gameState.markers = [];
+        }
+
+        // Calculate distance between two points on Earth in kilometers
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const distance = R * c; // Distance in km
+            return distance;
+        }
+
+        // Convert degrees to radians
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        // Initialize game on page load
+        document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
